@@ -10,6 +10,8 @@
 
 void init_errors(int level, FILE* fp);
 void syntax(char* str, ...);
+void expect_token(int expect, int got);
+void swallow_token(int tok);
 void scanner_error(char* str, ...);
 void warning(char* str, ...);
 void debug(int level, char* str, ...);

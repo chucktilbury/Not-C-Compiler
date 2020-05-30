@@ -33,3 +33,9 @@ if(BUILD_DOCUMENTATION)
 
     #    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/html DESTINATION     share/doc)
 endif()
+
+find_package(LLVM
+    REQUIRED CONFIG
+    PATHS ${search_paths}
+    NO_DEFAULT_PATH)
+

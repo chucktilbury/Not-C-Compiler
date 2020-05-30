@@ -24,7 +24,7 @@ LLVMTypeRef int32bitptr;
 extern char *outfile;
 extern char *infile[];
 int get_cmd_line(int argc, char** argv);
-extern int yydebug;
+int yydebug;
 
 int main(int argc, char **argv)
 {
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     for(char* str = iterate_config("INFILES"); str != NULL; str = iterate_config("INFILES"))
     {
         open_file(str);
-        yyparse();
+        parse();
     }
 
     int errors = get_num_errors();

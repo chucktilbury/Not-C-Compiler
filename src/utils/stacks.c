@@ -1,22 +1,14 @@
 
 #include "common.h"
 
-#ifdef __TESTING_STACK_C__
-#define fatal_error(...)              \
-    do                                \
-    {                                 \
-        fprintf(stderr, __VA_ARGS__); \
-        exit(1);                      \
-    } while(0)
-#endif
-
 #define min(a, b) (((a) > (b)) ? (b) : (a))
 
 stack_t* create_stack(void)
 {
-    stack_t* stack = (stack_t*)calloc(1, sizeof(stack_t));
+    stack_t* stack = (stack_t*)allocate_memory(sizeof(stack_t));
 
-    if(stack == NULL) fatal_error("cannot allocate memory for stack_t data structure");
+    if(stack == NULL)
+        fatal_error("cannot allocate memory for stack_t data structure");
 
     return stack;
 }
@@ -40,22 +32,28 @@ int push_stack(stack_t* stack, void* data, size_t size, int type)
     if(stack == NULL)
         return STACK_INVALID;
 
-    stack_item_t* item = calloc(1, sizeof(stack_item_t));
+    stack_item_t* item = allocate_memory(sizeof(stack_item_t));
+    if(item == NULL)
+        fatal_error("cannot allocate memry for stack item");
 
-    if(item == NULL) fatal_error("cannot allocate memry for stack item");
-
-    item->data = malloc(size);
-    if(item->data == NULL) fatal_error("cannot allocate %lu bytes for stack data", size);
+    item->data = allocate_memory(size);
+    if(item->data == NULL)
+        fatal_error("cannot allocate %lu bytes for stack data", size);
 
     memcpy(item->data, data, size);
     item->type = type;
     item->size = size;
 
-    if(stack->items != NULL) item->next = stack->items;
+    if(stack->items != NULL)
+        item->next = stack->items;
     stack->items = item;
     return STACK_NO_ERROR;
 }
 
+/*
+ * This returns the data in a parameter so that we can free is
+ * without interfering with the caller.
+ */
 int pop_stack(stack_t* stack, void* data, size_t size)
 {
     if(stack == NULL)
@@ -63,15 +61,17 @@ int pop_stack(stack_t* stack, void* data, size_t size)
 
     stack_item_t* item = stack->items;
 
-    if(item == NULL) return STACK_EMPTY;
+    if(item == NULL) return
+        STACK_EMPTY;
     stack->items = item->next;
 
-    if(item->data != NULL && data != NULL) memcpy(data, item->data, min(size, item->size));
+    if(item->data != NULL && data != NULL)
+        memcpy(data, item->data, min(size, item->size));
 
     int type = item->type;
 
-    free(item->data);
-    free(item);
+    free_memory(item->data);
+    free_memory(item);
 
     return type;
 }
@@ -83,9 +83,11 @@ int peek_stack(stack_t* stack, void* data, size_t size)
 
     stack_item_t* item = stack->items;
 
-    if(item == NULL) return STACK_EMPTY;
+    if(item == NULL)
+        return STACK_EMPTY;
 
-    if(item->data != NULL) memcpy(data, item->data, min(size, item->size));
+    if(item->data != NULL)
+        memcpy(data, item->data, min(size, item->size));
 
     return item->type;
 }

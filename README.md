@@ -21,11 +21,12 @@ Features that are different from C:
 * Nested function definitions are legal.
 * Iterators are implemented similar to Ruby with the ```yield``` keyword.
 * ```choose/item``` replaces switch/case. Syntax looks like ```choose(expr){item(const){} ... default{}}```. A const can also be a string.
+* The ```:``` character is considered to be the same as a space, so you can define an entire module without using invisible characters.
 
 Features that are planned but not supported yet.
 * When a function is declated inside a struct, the scope of the other items defined in the struct will appear as global or local to that function.
 * Data structures can be concatenated to make a larger structure. Name conflicts are handled with the ```.``` operator.
 * Function decorators, similar to Python.
 * Lists and dictionaries, similar to Python.
-* Operator overloading for structures. 
+* Operator overloading for structures.
 * Exception handling.

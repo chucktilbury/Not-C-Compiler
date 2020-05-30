@@ -1,11 +1,9 @@
 #ifndef __STACK_H__
 #define __STACK_H__
 
-#include <stdlib.h>  // this fixes some stupid with VSC
-
 enum {
-    STACK_INVALID,
-    STACK_EMPTY,
+    STACK_EMPTY = -1,
+    STACK_INVALID = 123,
     STACK_NO_ERROR,
 };
 

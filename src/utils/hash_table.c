@@ -5,15 +5,6 @@
 
 #include "common.h"
 
-#ifdef __TESTING_HASH_TABLE_C__
-#define fatal_error(...)              \
-    do                                \
-    {                                 \
-        fprintf(stderr, __VA_ARGS__); \
-        exit(1);                      \
-    } while(0)
-#endif
-
 #define TABLE_MAX_LOAD 0.75
 
 /*
@@ -83,7 +74,7 @@ static void grow_table(hash_table_t* tab)
         // table must always be an even power of 2 for this to work.
         size_t capacity = tab->capacity << 1;
 
-        _table_entry_t* entries = (_table_entry_t*)calloc(capacity, sizeof(_table_entry_t));
+        _table_entry_t* entries = (_table_entry_t*)allocate_data(capacity, sizeof(_table_entry_t));
 
         if(entries == NULL) fatal_error("cannot allocate %lu bytes for hash table", capacity * sizeof(_table_entry_t));
 
@@ -121,14 +112,14 @@ hash_table_t* create_hash_table(void)
 {
     hash_table_t* tab;
 
-    tab = calloc(1, sizeof(hash_table_t));
+    tab = allocate_memory(sizeof(hash_table_t));
     if(tab == NULL)
     {
         fatal_error("cannot allocate %lu bytes for hash table structure", sizeof(hash_table_t));
     }
 
     tab->capacity = 0x01 << 3;
-    tab->entries = (_table_entry_t*)calloc(tab->capacity, sizeof(_table_entry_t));
+    tab->entries = (_table_entry_t*)allocate_data(tab->capacity, sizeof(_table_entry_t));
     return tab;
 }
 
@@ -140,15 +131,20 @@ void destroy_hash_table(hash_table_t* tab)
         {
             for(int i = 0; i < (int)tab->capacity; i++)
             {
-                if(tab->entries[i].data != NULL) free(tab->entries[i].data);
-                if(tab->entries[i].key != NULL) free((void*)tab->entries[i].key);
+                if(tab->entries[i].data != NULL)
+                    free_memory(tab->entries[i].data);
+                if(tab->entries[i].key != NULL)
+                    free_memory((void*)tab->entries[i].key);
             }
-            free(tab->entries);
+            free_memory(tab->entries);
         }
-        free(tab);
+        free_memory(tab);
     }
 }
 
+/*
+ * Refuse to replace an entry.
+ */
 int insert_hash_table(hash_table_t* tab, const char* key, void* data, size_t size)
 {
     grow_table(tab);
@@ -156,15 +152,19 @@ int insert_hash_table(hash_table_t* tab, const char* key, void* data, size_t siz
     _table_entry_t* entry = find_slot(tab->entries, tab->capacity, key);
     int retv = (entry->key == NULL) ? HASH_NO_ERROR : HASH_REPLACE;
 
-    entry->key = strdup(key);
-    if(entry->key == NULL) fatal_error("cannot allocate %lu bytes for hash table key", strlen(key));
+    if(retv == HASH_NO_ERROR) {
+        entry->key = allocate_string(key);
+        if(entry->key == NULL)
+            fatal_error("cannot allocate %lu bytes for hash table key", strlen(key));
 
-    entry->data = malloc(size);
-    if(entry->data == NULL) fatal_error("cannot allocate %lu bytes for hash table data", size);
+        entry->data = allocate_memory(size);
+        if(entry->data == NULL)
+            fatal_error("cannot allocate %lu bytes for hash table data", size);
 
-    memcpy(entry->data, data, size);
-    entry->size = size;
-    tab->count++;
+        memcpy(entry->data, data, size);
+        entry->size = size;
+        tab->count++;
+    }
 
     return retv;
 }
@@ -178,44 +178,15 @@ int find_hash_table(hash_table_t* tab, const char* key, void* data, size_t size)
     {
         if(entry->data != NULL)
         {
-            if(entry->size != size) retv = HASH_DATA_SIZE;
+            //if(entry->size != size)
+            //    retv = HASH_DATA_SIZE;
             memcpy(data, entry->data, _min(size, entry->size));
         }
-        else
-            retv = HASH_NO_DATA;
+        //else
+        //    retv = HASH_NO_DATA;
     }
     else
         retv = HASH_NOT_FOUND;
 
     return retv;
 }
-
-#ifdef __TESTING_HASH_TABLE_C__
-
-int main(void)
-{
-    char* strs[] = {"foo",      "bar",       "baz",      "bacon",   "eggs",    "potatoes",  "onions",
-                    "knuckles", "are",       "dragging", "hoops",   "of",      "chocolate", "almonds",
-                    "with",     "sprinkles", "and",      "cyanide", "log",     "balls",     "eaten",
-                    "by",       "unicorns",  "as",       "pink",    "stripes", "given",     "to",
-                    "nuclear",  "pound",     "cake",     "candles", "snards",  "snipes",    NULL};
-    hash_table_t* tab = create_hash_table();
-    char buffer[128];
-
-    printf("\ninsert entries\n");
-    printf("  table capacity: %lu\n", tab->capacity);
-    printf("  table count: %lu\n", tab->count);
-    for(int i = 0; strs[i] != NULL; i++) insert_hash_table(tab, strs[i], strs[i], strlen(strs[i]) + 1);
-
-    printf("\nfind entries\n");
-    printf("  table capacity: %lu\n", tab->capacity);
-    printf("  table count: %lu\n", tab->count);
-    for(int i = 0; strs[i] != NULL; i++)
-    {
-        find_hash_table(tab, strs[i], &buffer,
-                        sizeof(buffer));  // strlen(strs[i])+1);
-                                          // printf("value: %s\n", buffer);
-    }
-}
-
-#endif

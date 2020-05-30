@@ -9,12 +9,15 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "memory.h"
 #include "errors.h"
 #include "hash_table.h"
-#include "lists.h"
+#include "ptr_lists.h"
+#include "data_lists.h"
 #include "scanner.h"
 #include "stacks.h"
 #include "parser.h"
 #include "configure.h"
+#include "ast.h"
 
 #endif

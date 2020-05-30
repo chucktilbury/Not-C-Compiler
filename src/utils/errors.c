@@ -63,6 +63,19 @@ void syntax(char* str, ...)
     errors.errors++;
 }
 
+void expect_token(int expect, int got) {
+
+    if(expect != got) {
+        syntax("expected %s but got %s", tok_to_strg(expect), tok_to_strg(got));
+    }
+    // else do nothing
+}
+
+void swallow_token(int tok) {
+    int gtok = get_token(NULL);
+    expect_token(tok, gtok);
+}
+
 void scanner_error(char* str, ...)
 {
     va_list args;
