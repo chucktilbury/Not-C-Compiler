@@ -1,5 +1,4 @@
 /**
- * @file Abstract Syntax Tree
  *
  * The abstract syntax tree is implemented as a tree that can have multiple
  * sibling and child nodes. A child node is one that is defined inside a "{}"
