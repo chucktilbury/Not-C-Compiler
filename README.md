@@ -1,4 +1,4 @@
-# Not-C-Compiler
+# Simple
 LLVM based compiler for a language that is similar to a subset of C
 
 This subset of C does not include:
