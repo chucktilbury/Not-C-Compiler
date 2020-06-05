@@ -50,6 +50,7 @@ static tok_str tok_list[] = {
     {FNUM_LITERAL, "float literal"},
     {UNUM_LITERAL, "unsigned number literal"},
     {IDENTIFIER, "identifier"},
+    {MAIN, "main function"},
     {-1, NULL}
 };
 

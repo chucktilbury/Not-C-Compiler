@@ -2,6 +2,6 @@
 #include "common.h"
 #include "internal.h"
 
-void do_typedef(parser_state_t* ps) {
+void parse_typedef(ast_node_t* node) {
 
 }

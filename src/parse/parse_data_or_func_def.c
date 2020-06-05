@@ -10,7 +10,7 @@
  * type name '='|';' = a data definition
  * type name '(' = a function definition
  */
-void do_data_or_func_def(parser_state_t* ps) {
+void parse_data_or_func_def(ast_node_t* ps) {
 
     // expect a '*' or a name
 }

@@ -160,6 +160,7 @@ static scanner_state_t scanner_state;
 "for"           { SET_TOKEN_STATE(FOR); }
 "if"            { SET_TOKEN_STATE(IF); }
 "else"          { SET_TOKEN_STATE(ELSE); }
+"main"          { SET_TOKEN_STATE(MAIN); }
 
 "float"         { SET_TOKEN_STATE(FLOAT); }
 "int"           { SET_TOKEN_STATE(INT); }

@@ -1,6 +1,6 @@
 #ifndef __PARSER_H__
 #define __PARSER_H__
 
-void parse(void);
+ast_node_t* parse(void);
 
 #endif

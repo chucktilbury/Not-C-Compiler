@@ -30,6 +30,7 @@ typedef struct _scanner_state {
 
 typedef enum {
     END_OF_INPUT = 0,
+    ERROR_TOKEN,
     IMPORT = FIRST_TOKEN,
     EXTERN,
     CONST,
@@ -49,6 +50,7 @@ typedef enum {
     FOR,
     IF,
     ELSE,
+    MAIN,
 
     FLOAT,
     INT,

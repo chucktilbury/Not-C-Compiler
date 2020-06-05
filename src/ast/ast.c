@@ -45,6 +45,13 @@ void destroy_node(ast_node_t* node) {
 
 
 /*
+ * Recursively destroy the entire tree.
+ */
+void destroy_ast(ast_node_t* root) {
+    // TBD
+}
+
+/*
  * Add a generic attribute. This function copies the data into an allocated memory
  * area. Care is required to prevent memory leaks when the stored data has allocated
  * pointers in it.

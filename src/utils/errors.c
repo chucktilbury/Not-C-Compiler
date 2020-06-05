@@ -63,17 +63,38 @@ void syntax(char* str, ...)
     errors.errors++;
 }
 
-void expect_token(int expect, int got) {
+int expect_token(scanner_state_t* ss, int expect) {
 
-    if(expect != got) {
-        syntax("expected %s but got %s", tok_to_strg(expect), tok_to_strg(got));
+    int tok = get_token(ss);
+
+    if(expect != tok) {
+        syntax("expected %s but got %s", tok_to_strg(expect), tok);
+        return ERROR_TOKEN;
     }
-    // else do nothing
+
+    return tok;
 }
 
-void swallow_token(int tok) {
-    int gtok = get_token(NULL);
-    expect_token(tok, gtok);
+int expect_token_list(scanner_state_t* ss, int num, ...) {
+
+    va_list(args);
+    int tok = get_token(ss);
+    char buffer[1024];
+
+    memset(buffer, 0, sizeof(buffer));
+    va_start(args, num);
+    for(int i = 0; i < num; i++) {
+        if(tok == va_arg(args, int))
+            return tok;
+        else {
+            strncat(buffer, tok_to_strg(tok), sizeof(buffer));
+            strncat(buffer, ", ", sizeof(buffer));
+        }
+    }
+
+    syntax("expected %sbut got %s", buffer, tok);
+
+    return ERROR_TOKEN;
 }
 
 void scanner_error(char* str, ...)

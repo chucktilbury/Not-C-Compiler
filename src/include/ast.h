@@ -8,14 +8,33 @@ typedef enum {
     AST_ATTR_NOT_FOUND,
 } ast_error_t;
 
+typedef enum {
+    ROOT_NODE,
+    IMPORT_NODE,
+    TYPEDEF_NODE,
+    DATA_DEF_NODE,
+    FUNC_DEF_NODE,
+} ast_node_types_t;
+
 typedef struct _ast_node {
     hash_table_t* attribs;
     data_list_t* children;
     data_list_t* siblings;
 } ast_node_t;
 
+#define ADD_INT_ATTRIB(node, name, val) do { \
+        int v = val; \
+        if(add_attribute(node, name, &v, sizeof(int)) != AST_NO_ERROR) \
+            fatal_error("cannot add int item to attribute table"); \
+    } while(0)
+#define ADD_STR_ATTRIB(node, name, str) do { \
+        if(add_attribute(node, name, str, strlen(str)+1) != AST_NO_ERROR) \
+            fatal_error("cannot add string item to attribute table"); \
+    }while(0)
+
 ast_node_t* create_node(void);
 void destroy_node(ast_node_t*);
+void destroy_ast(ast_node_t* root);
 
 int add_attribute(ast_node_t*, const char*, void*, size_t);
 int get_attribute(ast_node_t*, const char*, void*, size_t);

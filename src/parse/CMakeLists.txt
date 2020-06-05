@@ -17,9 +17,9 @@ add_custom_command(OUTPUT ${LEX_C_SOURCE}
 add_library(${PROJECT_NAME} STATIC
     parser.c
     scanner.c
-    do_data_or_func_def.c
-    do_import.c
-    do_typedef.c
+    parse_data_or_func_def.c
+    parse_import.c
+    parse_typedef.c
     types.c
 )
 
