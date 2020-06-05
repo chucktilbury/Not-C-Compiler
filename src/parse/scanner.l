@@ -286,7 +286,7 @@ static scanner_state_t scanner_state;
 
 %%
 
-void open_file(char *fname) {
+void open_file(const char *fname) {
 
     _file_name_stack *name;
 // TODO: add a check to make sure that any file is opened exactly once.

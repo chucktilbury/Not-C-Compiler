@@ -9,6 +9,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "misc.h"
 #include "scanner.h"
 #include "memory.h"
 #include "errors.h"

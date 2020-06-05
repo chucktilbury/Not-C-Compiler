@@ -2,16 +2,25 @@
 #include "common.h"
 #include "internal.h"
 
+// This is a guard to prevent recursively importing a file. If it goes over 256, then an
+// error is reported and the compiler aborts compilation.
+static int entered = 0;
 
 /*
  * This function is called recursively when an import statement is encountered.
  */
-void parse_module(ast_node_t* node) {
+void parse_module(const char* name, ast_node_t* node) {
 
     int tok;
     int finished = 0;
     scanner_state_t ss;
     int err_flag = 0;
+
+    entered ++;
+    if(entered > 256)
+        fatal_error("import nesting greater than 256 is not allowed");
+
+    open_file(name);
 
     while(!finished) {
         tok = get_token(&ss);
@@ -53,18 +62,19 @@ void parse_module(ast_node_t* node) {
 
         }
     }
+    entered --;
 }
 
 /*
  * Main entry point for the parser. Returns a pointer to the AST for further processing.
  */
-ast_node_t* parse(void) {
+ast_node_t* parse(const char* name) {
 
     ast_node_t* node = create_node();
     ADD_INT_ATTRIB(node, "NODE_TYPE", ROOT_NODE);
     ADD_STR_ATTRIB(node, "NAME", "__root__");
 
-    parse_module(node);
+    parse_module(name, node);
 
     if(get_num_errors() == 0)
         return node; // root node

@@ -1,8 +1,8 @@
 
-project(notc)
+project(simple)
 
 add_executable(${PROJECT_NAME}
-    notc.c
+    simple.c
     )
 
 target_link_libraries(${PROJECT_NAME}

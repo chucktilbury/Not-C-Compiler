@@ -87,8 +87,8 @@ int expect_token_list(scanner_state_t* ss, int num, ...) {
         if(tok == va_arg(args, int))
             return tok;
         else {
-            strncat(buffer, tok_to_strg(tok), sizeof(buffer));
-            strncat(buffer, ", ", sizeof(buffer));
+            STRNCAT(buffer, tok_to_strg(tok), sizeof(buffer));
+            STRNCAT(buffer, ", ", sizeof(buffer));
         }
     }
 

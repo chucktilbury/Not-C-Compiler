@@ -87,7 +87,7 @@ typedef enum {
 char* get_file_name(void);
 int get_line_number(void);
 int get_col_number(void);
-void open_file(char* fname);
+void open_file(const char* fname);
 int get_token(scanner_state_t* ss);
 const char* tok_to_strg(int tok);
 

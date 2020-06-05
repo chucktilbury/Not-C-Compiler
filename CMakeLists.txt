@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(notc)
+project(simple)
 
 #set(CMAKE_VERBOSE_MAKEFILE ON)
 set(LIBRARY_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/lib")

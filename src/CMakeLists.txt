@@ -5,4 +5,4 @@
 add_subdirectory(parse)
 add_subdirectory(utils)
 add_subdirectory(ast)
-add_subdirectory(notc)
+add_subdirectory(simple)

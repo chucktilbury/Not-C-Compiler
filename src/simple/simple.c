@@ -39,8 +39,7 @@ int main(int argc, char **argv)
 
     for(char* str = iterate_config("INFILES"); str != NULL; str = iterate_config("INFILES"))
     {
-        open_file(str);
-        parse();
+        parse(str);
     }
 
     int errors = get_num_errors();
