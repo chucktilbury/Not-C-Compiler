@@ -14,19 +14,6 @@
 #include "common.h"
 #include "internal.h"
 
-/*
- * TODO: circular dependency: To detect a circular dependency, a tree must be made of the dependencies such that the
- * root of the tree can be said to "depend" on the nodes that appear under it. When a node depends on a node above
- * it, that is a circular dependency. The tree exists for the life of the compile. A binary tree can be formed by
- * adding a
- *
- * Lists? Each file that is included has a list of dependencies. If a name appears twice in the list, then that is
- * a circular dependency. The problem is when to start a new list. Do you start a separate list for every file
- * that is included? Or is a list made just of top level includes? How would you tell?
- */
-
-//static fn_buf[256]; // max file name size on Linux filesystem
-
 static int file_exists(char* fname) {
 
     FILE* fp;
@@ -38,35 +25,58 @@ static int file_exists(char* fname) {
     return 0;
 }
 
-static char* search_path(char* path, char* name) {
+static char* search_env_path(char* name) {
 
-    char* buf = malloc(256);    // max path length under linux is 255
-    char* raw = strdup(path);   // strtok destroys the string it parses
+    char* tmp = getenv("SIMP_INCLUDE");
+
+    if(tmp == NULL)
+        return NULL;
+
+    char* buf = MALLOC(256);    // max path length under linux is 255
+    char* raw = STRDUP(tmp);   // strtok destroys the string it parses
 
     for(char* p = strtok(raw, ":") ; p!= NULL; p = strtok(NULL, ":")) {
         strcpy(buf, p);
         strcat(buf, "/");
         strcat(buf, name);
         if(file_exists(buf)) {
-            free(raw);
+            FREE(raw);
             return buf; // caller must free this
         }
     }
 
-    free(raw);
-    free(buf);
+    FREE(raw);
+    FREE(buf);
     return NULL;
 }
 
-static char* find_import_file(const char* base) {
+static char* search_cmd_path(char* name) {
+
+    char* ptr;
+    char* buf = MALLOC(256);
+
+    reset_config_list("FPATH");
+    for(ptr = iterate_config("FPATH"); ptr != NULL; ptr = iterate_config("FPATH")) {
+        strcpy(buf, ptr);
+        strcat(buf, "/");
+        strcat(buf, name);
+        if(file_exists(buf)) {
+            return buf; // caller must free this
+        }
+    }
+
+    FREE(buf);
+    return NULL;
+}
+
+char* find_import_file(const char* base) {
 
     char* name;
-    char* path;
     char* tmp = NULL;
 
     //memset(fn_buf, 0, sizeof(fn_buf));
 
-    name = malloc(256);
+    name = MALLOC(256);
 
     // add the file extention if it's not present
     strncpy(name, base, 252);
@@ -74,46 +84,45 @@ static char* find_import_file(const char* base) {
     if(tmp != NULL) {
         if(strcmp(tmp, ".s"))
             strcat(name, ".s");
+        else
+            warning("do not include the file extention for import names");
     }
     else
         strcat(name, ".s");
 
-    // first search in the command line
-    if((tmp = GET_CONFIG_STR("FPATH")) != NULL) {
-        path = strdup(tmp);
-        tmp = search_path(path, name);
-        free(path);
-        if(tmp == NULL) {
-            if((tmp = getenv("SIMP_INCLUDE")) != NULL) {
-                path = strdup(tmp);
-                tmp = search_path(path, name);
-                free(path);
-            }
+    if(NULL == (tmp = search_cmd_path(name))) {
+        if(NULL == (tmp = search_env_path(name))) {
+            tmp = NULL; // for illustration
         }
     }
 
-    free(name);
+    FREE(name);
     return tmp; // caller must free this
 }
 
-void parse_import(ast_node_t* node) {
+int parse_import(ast_node_t* node) {
 
-    TRACE();
     scanner_state_t ss;
     int tok = get_token(&ss);
 
     if(tok == STRING_LITERAL) {
+        ADD_STR_ATTRIB(node, IMPORT_NAME_ATTR, ss.value.str);
         char* fn = find_import_file(ss.value.str);
         if(fn != NULL) {
             parse_module(fn, node);
             free(fn);
         }
-        else
+        else {
             syntax("cannot find module \"%s\" to open", ss.value.str);
+            return 1;
+        }
     }
-    else
+    else {
         syntax("expected a module name in quotes, but got %s", tok_to_strg(tok));
+        return 1;
+    }
 
     expect_token(&ss, ';');
 
+    return 0;
 }

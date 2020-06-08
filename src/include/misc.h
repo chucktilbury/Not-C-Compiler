@@ -9,4 +9,9 @@
  */
 #define STRNCAT(dest, src, size) strncat((dest), (src), size-strlen(dest))
 
+/*
+ * Clip the path to the main file name.
+ */
+const char* clip_path(const char* path);
+
 #endif

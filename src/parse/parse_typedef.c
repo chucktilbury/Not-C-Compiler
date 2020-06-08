@@ -2,6 +2,6 @@
 #include "common.h"
 #include "internal.h"
 
-void parse_typedef(ast_node_t* node) {
-
+int parse_typedef(ast_node_t* node) {
+    return 0;
 }

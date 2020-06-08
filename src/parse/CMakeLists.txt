@@ -21,6 +21,7 @@ add_library(${PROJECT_NAME} STATIC
     parse_import.c
     parse_typedef.c
     types.c
+    #scanner_support.c
 )
 
 #find_package(LLVM)

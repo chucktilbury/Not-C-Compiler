@@ -654,67 +654,10 @@ char *yytext;
 #line 23 "scanner.l"
 
 #include "common.h"
+#include "internal.h"
 
 // string buffer to get token from
 //static char strbuf[1024*64];
-
-typedef struct _file_name_stack {
-    int line_no;
-    int col_no;
-    char *name;
-    struct _file_name_stack *next;
-} _file_name_stack;
-
-void count(void);
-static char buffer[1024*64];
-static int bidx = 0;
-static _file_name_stack *name_stack;
-int num_errors = 0; // global updated by parser
-
-// these funcs support the string scanner
-static void append_char(char ch) {
-    if((sizeof(buffer)-1) > (size_t)bidx) {
-        buffer[bidx] = ch;
-        bidx++;
-    }
-    else {
-        scanner_error("buffer overrun");
-    }
-}
-
-static void append_str(char *str) {
-    if((sizeof(buffer)-1) > (strlen(buffer) + strlen(str))) {
-        strcat(buffer, str);
-        bidx = strlen(buffer);
-    }
-    else {
-        scanner_error("buffer overrun");
-    }
-}
-
-static void update_loc(void){
-
-    if(name_stack == NULL)
-        return;
-
-    for(char *s = yytext; *s != '\0'; s++) {
-        name_stack->col_no++;
-    }
-
-}
-
-/*  */
-int check_type(void);
-
-#define YY_USER_ACTION update_loc();
-/*
-#define TOKEN(t)    do{yylval.token = (t); return(t); }while(0)
-#define IDENT()     do{yylval.str = strdup(yytext); return(check_type()); }while(0)
-#define DEF_UNUM()  do{yylval.value.unum = strtol(yytext, NULL, 16); return(UNUM_LITERAL); }while(0)
-#define DEF_INUM()  do{yylval.value.inum = strtol(yytext, NULL, 10); return(INUM_LITERAL); }while(0)
-#define DEF_FNUM()  do{yylval.value.fnum = strtod(yytext, NULL); return(FNUM_LITERAL); }while(0)
-#define STRG()      do{yylval.str = strdup(buffer); BEGIN(INITIAL); return(STRING_LITERAL); }while(0)
-*/
 
 #define SET_TOKEN_STATE(t) do{ \
             scanner_state.token = t; \
@@ -749,13 +692,31 @@ int check_type(void);
             return FNUM_LITERAL; \
         } while(0)
 
-static scanner_state_t scanner_state;
+typedef struct _file_name_stack {
+    //int line_no;
+    //int col_no;
+    YY_BUFFER_STATE state;
+    char *name;
+    struct _file_name_stack *next;
+} _file_name_stack;
 
+int check_type(void);
+void close_file(void);
+void append_char(char ch);
+void append_str(char *str);
+void update_loc(void);
 
-#line 756 "scanner.c"
+scanner_state_t scanner_state;
+
+char buffer[1024*64];
+int bidx = 0;
+_file_name_stack *name_stack;
+int num_errors = 0; // global updated by parser
+
+#line 717 "scanner.c"
 
 #define YY_NO_INPUT 1
-#line 759 "scanner.c"
+#line 720 "scanner.c"
 
 #define INITIAL 0
 #define SQUOTES 1
@@ -973,11 +934,11 @@ YY_DECL
 		}
 
 	{
-#line 131 "scanner.l"
+#line 92 "scanner.l"
 
-#line 133 "scanner.l"
+#line 94 "scanner.l"
     /* whitespace */
-#line 981 "scanner.c"
+#line 942 "scanner.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1047,386 +1008,386 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 /* rule 1 can match eol */
 YY_RULE_SETUP
-#line 134 "scanner.l"
-{ name_stack->line_no++; name_stack->col_no=0; }
+#line 95 "scanner.l"
+{ name_stack->state->yy_bs_lineno++; name_stack->state->yy_bs_column=0; }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 135 "scanner.l"
+#line 96 "scanner.l"
 {}
 	YY_BREAK
 /* recognize and ignore a C comments */
 case 3:
 YY_RULE_SETUP
-#line 138 "scanner.l"
+#line 99 "scanner.l"
 { BEGIN(COMMENT); }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 139 "scanner.l"
+#line 100 "scanner.l"
 { BEGIN(INITIAL); }
 	YY_BREAK
 case 5:
 /* rule 5 can match eol */
 YY_RULE_SETUP
-#line 140 "scanner.l"
-{ name_stack->line_no++; yylineno++; name_stack->col_no=0; }
+#line 101 "scanner.l"
+{ name_stack->state->yy_bs_lineno++; yylineno++; name_stack->state->yy_bs_column=0; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 141 "scanner.l"
+#line 102 "scanner.l"
 {}  /* eat everything in between */
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 142 "scanner.l"
+#line 103 "scanner.l"
 {} /* eat up until the newline */
 	YY_BREAK
 /* Keyword tokens */
 case 8:
 YY_RULE_SETUP
-#line 145 "scanner.l"
+#line 106 "scanner.l"
 { SET_TOKEN_STATE(IMPORT); }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 146 "scanner.l"
+#line 107 "scanner.l"
 { SET_TOKEN_STATE(EXTERN); }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 147 "scanner.l"
+#line 108 "scanner.l"
 { SET_TOKEN_STATE(CONST); }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 148 "scanner.l"
+#line 109 "scanner.l"
 { SET_TOKEN_STATE(STATIC); }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 149 "scanner.l"
+#line 110 "scanner.l"
 { SET_TOKEN_STATE(TYPEDEF); }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 151 "scanner.l"
+#line 112 "scanner.l"
 { SET_TOKEN_STATE(BREAK); }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 152 "scanner.l"
+#line 113 "scanner.l"
 { SET_TOKEN_STATE(CONTINUE); }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 153 "scanner.l"
+#line 114 "scanner.l"
 { SET_TOKEN_STATE(RETURN); }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 154 "scanner.l"
+#line 115 "scanner.l"
 { SET_TOKEN_STATE(YIELD); }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 156 "scanner.l"
+#line 117 "scanner.l"
 { SET_TOKEN_STATE(SWITCH); }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 157 "scanner.l"
+#line 118 "scanner.l"
 { SET_TOKEN_STATE(CASE); }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 158 "scanner.l"
+#line 119 "scanner.l"
 { SET_TOKEN_STATE(DEFAULT); }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 159 "scanner.l"
+#line 120 "scanner.l"
 { SET_TOKEN_STATE(DO); }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 160 "scanner.l"
+#line 121 "scanner.l"
 { SET_TOKEN_STATE(WHILE); }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 161 "scanner.l"
+#line 122 "scanner.l"
 { SET_TOKEN_STATE(FOR); }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 162 "scanner.l"
+#line 123 "scanner.l"
 { SET_TOKEN_STATE(IF); }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 163 "scanner.l"
+#line 124 "scanner.l"
 { SET_TOKEN_STATE(ELSE); }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 164 "scanner.l"
+#line 125 "scanner.l"
 { SET_TOKEN_STATE(MAIN); }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 166 "scanner.l"
+#line 127 "scanner.l"
 { SET_TOKEN_STATE(FLOAT); }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 167 "scanner.l"
+#line 128 "scanner.l"
 { SET_TOKEN_STATE(INT); }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 168 "scanner.l"
+#line 129 "scanner.l"
 { SET_TOKEN_STATE(UINT); }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 169 "scanner.l"
+#line 130 "scanner.l"
 { SET_TOKEN_STATE(BOOL); }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 170 "scanner.l"
+#line 131 "scanner.l"
 { SET_TOKEN_STATE(VOID); }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 171 "scanner.l"
+#line 132 "scanner.l"
 { SET_TOKEN_STATE(STRING); }
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 172 "scanner.l"
+#line 133 "scanner.l"
 { SET_TOKEN_STATE(TUPLE); }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 173 "scanner.l"
+#line 134 "scanner.l"
 { SET_TOKEN_STATE(STRUCT); }
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 175 "scanner.l"
+#line 136 "scanner.l"
 { SET_TOKEN_STATE(TRUE); }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 176 "scanner.l"
+#line 137 "scanner.l"
 { SET_TOKEN_STATE(FALSE); }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 177 "scanner.l"
+#line 138 "scanner.l"
 { SET_TOKEN_STATE(SIZEOF); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 178 "scanner.l"
+#line 139 "scanner.l"
 { SET_TOKEN_STATE(TYPEOF); }
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 180 "scanner.l"
+#line 141 "scanner.l"
 { SET_TOKEN_STATE(ELLIPSIS); }
 	YY_BREAK
 /* Operator tokens */
 case 39:
 YY_RULE_SETUP
-#line 183 "scanner.l"
+#line 144 "scanner.l"
 { SET_TOKEN_STATE(AND_OP); }
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 184 "scanner.l"
+#line 145 "scanner.l"
 { SET_TOKEN_STATE(OR_OP); }
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 185 "scanner.l"
+#line 146 "scanner.l"
 { SET_TOKEN_STATE(LE_OP); }
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 186 "scanner.l"
+#line 147 "scanner.l"
 { SET_TOKEN_STATE(GE_OP); }
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 187 "scanner.l"
+#line 148 "scanner.l"
 { SET_TOKEN_STATE(EQ_OP); }
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 188 "scanner.l"
+#line 149 "scanner.l"
 { SET_TOKEN_STATE(NE_OP); }
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 189 "scanner.l"
+#line 150 "scanner.l"
 { SET_TOKEN_STATE(RIGHT_OP); }
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 190 "scanner.l"
+#line 151 "scanner.l"
 { SET_TOKEN_STATE(LEFT_OP); }
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 192 "scanner.l"
+#line 153 "scanner.l"
 { SET_TOKEN_STATE('&'); }
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 193 "scanner.l"
+#line 154 "scanner.l"
 { SET_TOKEN_STATE('!'); }
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 194 "scanner.l"
+#line 155 "scanner.l"
 { SET_TOKEN_STATE('~'); }
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 195 "scanner.l"
+#line 156 "scanner.l"
 { SET_TOKEN_STATE('-'); }
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 196 "scanner.l"
+#line 157 "scanner.l"
 { SET_TOKEN_STATE('+'); }
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 197 "scanner.l"
+#line 158 "scanner.l"
 { SET_TOKEN_STATE('*'); }
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 198 "scanner.l"
+#line 159 "scanner.l"
 { SET_TOKEN_STATE('/'); }
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 199 "scanner.l"
+#line 160 "scanner.l"
 { SET_TOKEN_STATE('%'); }
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 200 "scanner.l"
+#line 161 "scanner.l"
 { SET_TOKEN_STATE('<'); }
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 201 "scanner.l"
+#line 162 "scanner.l"
 { SET_TOKEN_STATE('>'); }
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 202 "scanner.l"
+#line 163 "scanner.l"
 { SET_TOKEN_STATE('^'); }
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 203 "scanner.l"
+#line 164 "scanner.l"
 { SET_TOKEN_STATE('|'); }
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 204 "scanner.l"
+#line 165 "scanner.l"
 { SET_TOKEN_STATE('?'); }
 	YY_BREAK
 /* Structural tokens */
 case 60:
 YY_RULE_SETUP
-#line 207 "scanner.l"
+#line 168 "scanner.l"
 { SET_TOKEN_STATE(';'); }
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 208 "scanner.l"
+#line 169 "scanner.l"
 { SET_TOKEN_STATE('{'); }
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 209 "scanner.l"
+#line 170 "scanner.l"
 { SET_TOKEN_STATE('}'); }
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 210 "scanner.l"
+#line 171 "scanner.l"
 { SET_TOKEN_STATE(','); }
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 211 "scanner.l"
+#line 172 "scanner.l"
 { SET_TOKEN_STATE(':'); }
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 212 "scanner.l"
+#line 173 "scanner.l"
 { SET_TOKEN_STATE('='); }
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 213 "scanner.l"
+#line 174 "scanner.l"
 { SET_TOKEN_STATE('('); }
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 214 "scanner.l"
+#line 175 "scanner.l"
 { SET_TOKEN_STATE(')'); }
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 215 "scanner.l"
+#line 176 "scanner.l"
 { SET_TOKEN_STATE('['); }
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 216 "scanner.l"
+#line 177 "scanner.l"
 { SET_TOKEN_STATE(']'); }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 217 "scanner.l"
+#line 178 "scanner.l"
 { SET_TOKEN_STATE('.'); }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 220 "scanner.l"
+#line 181 "scanner.l"
 { SET_IDENT_STATE(); }
 	YY_BREAK
 /* recognize an integer */
 case 72:
 YY_RULE_SETUP
-#line 223 "scanner.l"
+#line 184 "scanner.l"
 { SET_INUM_STATE(); }
 	YY_BREAK
 /* recognize an unsigned number */
 case 73:
 YY_RULE_SETUP
-#line 226 "scanner.l"
+#line 187 "scanner.l"
 { SET_UNUM_STATE(); }
 	YY_BREAK
 /* recognize a float */
 case 74:
 YY_RULE_SETUP
-#line 229 "scanner.l"
+#line 190 "scanner.l"
 { SET_FNUM_STATE(); }
 	YY_BREAK
 /* double quoted strings have escapes managed */
 case 75:
 YY_RULE_SETUP
-#line 232 "scanner.l"
+#line 193 "scanner.l"
 {
         bidx = 0;
         memset(buffer, 0, sizeof(buffer));
@@ -1435,84 +1396,84 @@ YY_RULE_SETUP
 	YY_BREAK
 case 76:
 YY_RULE_SETUP
-#line 238 "scanner.l"
+#line 199 "scanner.l"
 { SET_STRG_STATE(); }
 	YY_BREAK
 /* problem is that the short rule matches before the long one does */
 case 77:
 YY_RULE_SETUP
-#line 241 "scanner.l"
+#line 202 "scanner.l"
 { append_char('\n'); }
 	YY_BREAK
 case 78:
 YY_RULE_SETUP
-#line 242 "scanner.l"
+#line 203 "scanner.l"
 { append_char('\r'); }
 	YY_BREAK
 case 79:
 YY_RULE_SETUP
-#line 243 "scanner.l"
+#line 204 "scanner.l"
 { append_char('\t'); }
 	YY_BREAK
 case 80:
 YY_RULE_SETUP
-#line 244 "scanner.l"
+#line 205 "scanner.l"
 { append_char('\b'); }
 	YY_BREAK
 case 81:
 YY_RULE_SETUP
-#line 245 "scanner.l"
+#line 206 "scanner.l"
 { append_char('\f'); }
 	YY_BREAK
 case 82:
 YY_RULE_SETUP
-#line 246 "scanner.l"
+#line 207 "scanner.l"
 { append_char('\v'); }
 	YY_BREAK
 case 83:
 YY_RULE_SETUP
-#line 247 "scanner.l"
+#line 208 "scanner.l"
 { append_char('\\'); }
 	YY_BREAK
 case 84:
 YY_RULE_SETUP
-#line 248 "scanner.l"
+#line 209 "scanner.l"
 { append_char('\"'); }
 	YY_BREAK
 case 85:
 YY_RULE_SETUP
-#line 249 "scanner.l"
+#line 210 "scanner.l"
 { append_char('\''); }
 	YY_BREAK
 case 86:
 YY_RULE_SETUP
-#line 250 "scanner.l"
+#line 211 "scanner.l"
 { append_char('\?'); }
 	YY_BREAK
 case 87:
 YY_RULE_SETUP
-#line 251 "scanner.l"
+#line 212 "scanner.l"
 { append_char(yytext[1]); }
 	YY_BREAK
 case 88:
 YY_RULE_SETUP
-#line 252 "scanner.l"
+#line 213 "scanner.l"
 { append_char((char)strtol(yytext+1, 0, 8));  }
 	YY_BREAK
 case 89:
 YY_RULE_SETUP
-#line 253 "scanner.l"
+#line 214 "scanner.l"
 { append_char((char)strtol(yytext+2, 0, 16));  }
 	YY_BREAK
 case 90:
 YY_RULE_SETUP
-#line 254 "scanner.l"
+#line 215 "scanner.l"
 { append_str(yytext); }
 	YY_BREAK
 /* single quoted strings are absolute literals */
 case 91:
 YY_RULE_SETUP
-#line 258 "scanner.l"
+#line 219 "scanner.l"
 {
         bidx = 0;
         memset(buffer, 0, sizeof(buffer));
@@ -1521,51 +1482,62 @@ YY_RULE_SETUP
 	YY_BREAK
 case 92:
 YY_RULE_SETUP
-#line 264 "scanner.l"
+#line 225 "scanner.l"
 { SET_STRG_STATE(); }
 	YY_BREAK
 case 93:
 YY_RULE_SETUP
-#line 266 "scanner.l"
+#line 227 "scanner.l"
 { append_str(yytext); }
 	YY_BREAK
 case 94:
 YY_RULE_SETUP
-#line 267 "scanner.l"
+#line 228 "scanner.l"
 { append_str(yytext); }
 	YY_BREAK
 /* ignore characters such as '#' */
 case 95:
 YY_RULE_SETUP
-#line 270 "scanner.l"
+#line 231 "scanner.l"
 { }
 	YY_BREAK
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(SQUOTES):
 case YY_STATE_EOF(DQUOTES):
 case YY_STATE_EOF(COMMENT):
-#line 272 "scanner.l"
+#line 233 "scanner.l"
 {
 
+    if(name_stack != NULL) {
         DEBUG("closing file \"%s\"", name_stack->name);
+
         _file_name_stack *name = name_stack->next;
-        free(name_stack->name);
-        free(name_stack);
+        yy_delete_buffer(name_stack->state);
+        FREE(name_stack->name);
+        FREE(name_stack);
         name_stack = name;
 
-        memset(buffer, 0, sizeof(buffer));
-        yypop_buffer_state();
-        if(!YY_CURRENT_BUFFER) {
+        if(name_stack != NULL)
+            yy_switch_to_buffer(name_stack->state);
+        else {
+            DEBUG("calling yyterminate()");
             yyterminate();
         }
+        memset(buffer, 0, sizeof(buffer));
     }
+    else {
+        DEBUG("<<EOF>> with no file open");
+    }
+    DEBUG("file closed");
+    return END_OF_FILE;
+}
 	YY_BREAK
 case 96:
 YY_RULE_SETUP
-#line 288 "scanner.l"
+#line 260 "scanner.l"
 ECHO;
 	YY_BREAK
-#line 1569 "scanner.c"
+#line 1541 "scanner.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2539,34 +2511,63 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 288 "scanner.l"
+#line 260 "scanner.l"
 
 
 void open_file(const char *fname) {
 
     _file_name_stack *name;
-// TODO: add a check to make sure that any file is opened exactly once.
-// TODO: add logic to allow for files to be searched for using a command parameter.
+    char* infile = (char*)find_import_file(fname);
 
-    DEBUG("opening file: \"%s\"", fname);
-    if(NULL == (name = calloc(1, sizeof(_file_name_stack))))
+    DEBUG("opening file: \"%s\"", infile);
+    if(NULL == (name = CALLOC(1, sizeof(_file_name_stack))))
         scanner_error("cannot allocate memory for file stack");
 
-    if(NULL == (name->name = strdup(fname)))
-        scanner_error("cannot allocate memory for file stack name");
-
-    name->next = name_stack;
-    name->line_no = 1;
-    name->col_no = 1;
-    name_stack = name;
-
-    yyin = fopen(fname, "r");
+    yyin = fopen(infile, "r");
     if(NULL == yyin) {
         scanner_error("cannot open the input file: \"%s\": %s", fname, strerror(errno));
         exit(1);
     }
 
-    yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+    name->next = name_stack;
+    name->name = infile;
+    name->state = yy_create_buffer(yyin, YY_BUF_SIZE);
+    name_stack = name;
+    yy_switch_to_buffer(name_stack->state);
+}
+
+// these funcs support the string scanner
+void append_char(char ch) {
+
+    if((sizeof(buffer)-1) > (size_t)bidx) {
+        buffer[bidx] = ch;
+        bidx++;
+    }
+    else {
+        scanner_error("buffer overrun");
+    }
+}
+
+void append_str(char *str) {
+
+    if((sizeof(buffer)-1) > (strlen(buffer) + strlen(str))) {
+        strcat(buffer, str);
+        bidx = strlen(buffer);
+    }
+    else {
+        scanner_error("buffer overrun");
+    }
+}
+
+void update_loc(void) {
+
+    if(name_stack == NULL)
+        return;
+
+    for(char *s = yytext; *s != '\0'; s++) {
+        name_stack->state->yy_bs_column++;
+    }
+
 }
 
 // Tracking and global interface
@@ -2579,21 +2580,17 @@ char *get_file_name(void) {
 
 int get_line_number(void) {
     if(NULL != name_stack)
-        return name_stack->line_no;
+        return name_stack->state->yy_bs_lineno;
     else
         return -1;
 }
 
 int get_col_number(void) {
     if(NULL != name_stack)
-        return name_stack->col_no;
+        return name_stack->state->yy_bs_column;
     else
         return -1;
 }
-
-/*const char *get_tok_str(void) {
-    return strbuf;
-}*/
 
 /*
  * Return the token and copy the string that formed it if the parameter
@@ -2601,10 +2598,25 @@ int get_col_number(void) {
  */
 int get_token(scanner_state_t* ss) {
 
+    DEBUG("get_token(): file stack pointer: %p", name_stack);
+    if(name_stack == NULL) {
+        if(ss != NULL) {
+            //memcpy((void*)ss, (void*)&scanner_state, sizeof(scanner_state_t));
+            memset(ss, 0, sizeof(scanner_state_t));
+            ss->token = END_OF_INPUT;
+        }
+        DEBUG("end token = %s", tok_to_strg(END_OF_INPUT));
+        return END_OF_INPUT;
+    }
+
     memset(buffer, 0, sizeof(buffer));
     memset(ss, 0, sizeof(scanner_state_t));
     int tok = yylex();
+    if(tok == 0)
+        tok = END_OF_INPUT;
+    debug(10, "get_token() token = %s", tok_to_strg(tok));
 
+    DEBUG("scanner ptr = %p", ss);
     if(ss != NULL) {
         memcpy((void*)ss, (void*)&scanner_state, sizeof(scanner_state_t));
     }
@@ -2632,48 +2644,4 @@ int check_type(void) {
     return(IDENTIFIER);
 }
 
-
-#if 0
-yywrap()
-{
-    return(1);
-}
-
-
-comment()
-{
-    char c, c1;
-
-loop:
-    while ((c = input()) != '*' && c != 0)
-        putchar(c);
-
-    if ((c1 = input()) != '/' && c != 0)
-    {
-        unput(c1);
-        goto loop;
-    }
-
-    if (c != 0)
-        putchar(c1);
-}
-
-
-int column = 0;
-
-void count()
-{
-    int i;
-
-    for (i = 0; yytext[i] != '\0'; i++)
-        if (yytext[i] == '\n')
-            column = 0;
-        else if (yytext[i] == '\t')
-            column += 8 - (column % 8);
-        else
-            column++;
-
-    ECHO;
-}
-#endif
 

@@ -5,7 +5,7 @@
 
 stack_t* create_stack(void)
 {
-    stack_t* stack = (stack_t*)allocate_memory(sizeof(stack_t));
+    stack_t* stack = (stack_t*)MALLOC(sizeof(stack_t));
 
     if(stack == NULL)
         fatal_error("cannot allocate memory for stack_t data structure");
@@ -32,11 +32,11 @@ int push_stack(stack_t* stack, void* data, size_t size, int type)
     if(stack == NULL)
         return STACK_INVALID;
 
-    stack_item_t* item = allocate_memory(sizeof(stack_item_t));
+    stack_item_t* item = MALLOC(sizeof(stack_item_t));
     if(item == NULL)
         fatal_error("cannot allocate memry for stack item");
 
-    item->data = allocate_memory(size);
+    item->data = MALLOC(size);
     if(item->data == NULL)
         fatal_error("cannot allocate %lu bytes for stack data", size);
 
@@ -70,8 +70,8 @@ int pop_stack(stack_t* stack, void* data, size_t size)
 
     int type = item->type;
 
-    free_memory(item->data);
-    free_memory(item);
+    FREE(item->data);
+    FREE(item);
 
     return type;
 }

@@ -9,6 +9,8 @@
  *
  */
 
+// TODO parameters that have no switch are taking to be input file names
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +18,8 @@
 #include <errno.h>
 
 #include "configure.h"
+#include "memory.h"
+#include "misc.h"
 
 //static char cmd_line_buffer[1024*4];
 static char prog_name[1024];
@@ -59,24 +63,62 @@ static void check_required(void) {
     }
 }
 
+static void init_config(void) {
+
+    for(int i = 0; _global_config[i].name != NULL; i++) {
+        if(_global_config[i].type == CONFIG_TYPE_LIST) {
+            if(_global_config[i].value.string != NULL) {
+                // save the default value
+                ptr_list_t* list = create_ptr_list();
+                char* ptr = STRDUP(_global_config[i].value.string);
+
+                if(strchr(ptr, ':')) {
+                    // parse through a list
+                    for(char* tmp = strtok(ptr, ":"); tmp != NULL; tmp = strtok(NULL, ":"))
+                        append_ptr_list(list, tmp);
+                }
+                else
+                    append_ptr_list(list, ptr);
+
+                _global_config[i].value.list = list;
+            }
+            else
+                _global_config[i].value.list = create_ptr_list();
+        }
+    }
+}
+
 int configure(int argc, char** argv) {
 
     configuration_t* config;
     int idx;
 
+    init_config();
+
     strncpy(prog_name, argv[0], sizeof(prog_name));
     for(idx = 1; idx < argc; idx++) {
         config = find_config_by_arg(argv[idx]);
         if(config == NULL) {
-            fprintf(stderr, "CMD ERROR: Unknown configuration parameter: \"%s\"\n", argv[idx]);
-            show_use(); // does not return
+            if(argv[idx][0] == '-') {
+                fprintf(stderr, "CMD ERROR: Unknown configuration parameter: \"%s\"\n", argv[idx]);
+                show_use(); // does not return
+            }
+            else {
+                // it's an input file
+                config = find_config_by_name("INFILES");
+                const char* ptr = STRDUP(argv[idx]);
+                append_ptr_list(config->value.list, (void*)ptr);
+                config->touched++;
+                continue;
+            }
         }
 
         switch(config->type) {
             case CONFIG_TYPE_NUM: {
-                    if(idx+1 > argc) {
+                    // PORTABILITY: depends on eval order!
+                    if(idx+1 > argc || argv[idx+1][0] == '-') {
                         fprintf(stderr, "CMD ERROR: Expected a number to follow the \"%s\" parameter\n", argv[idx]);
-                        exit(1);
+                        show_use();
                     }
                     idx++;
                     int num = (int)strtol(argv[idx], NULL, 0);
@@ -88,24 +130,46 @@ int configure(int argc, char** argv) {
                     config->touched++;
                 }
                 break;
-            case CONFIG_TYPE_LIST:
-            case CONFIG_TYPE_STR: {
-                    if(idx+1 > argc) {
-                        fprintf(stderr, "CMD ERROR: Expected a string or list to follow the \"%s\" parameter\n", argv[idx]);
-                        exit(1);
+
+            case CONFIG_TYPE_LIST: {
+                    if(idx+1 > argc || argv[idx+1][0] == '-') {
+                        fprintf(stderr, "CMD ERROR: Expected a list or string to follow the \"%s\" parameter\n", argv[idx]);
+                        show_use();
                     }
+
                     idx++;
-                    config->value.string = strdup(argv[idx]);
+                    char* ptr = STRDUP(argv[idx]);
+                    if(strchr(ptr, ':')) {
+                        // parse through a list
+                        for(char* tmp = strtok(ptr, ":"); tmp != NULL; tmp = strtok(NULL, ":"))
+                            append_ptr_list(config->value.list, tmp);
+                    }
+                    else
+                        append_ptr_list(config->value.list, (void*)ptr);
                     config->touched++;
                 }
                 break;
+
+            case CONFIG_TYPE_STR: {
+                    if(idx+1 > argc || argv[idx+1][0] == '-') {
+                        fprintf(stderr, "CMD ERROR: Expected a string to follow the \"%s\" parameter\n", argv[idx]);
+                        show_use();
+                    }
+                    idx++;
+                    config->value.string = STRDUP(argv[idx]);
+                    config->touched++;
+                }
+                break;
+
             case CONFIG_TYPE_BOOL:
                 config->value.number = (config->value.number & 0x01) ^ 0x01;
                 config->touched++;
                 break;
+
             case CONFIG_TYPE_HELP:
                 show_use();
                 break;
+
             default:
                 fprintf(stderr, "CFG ERROR: Unexpected configuration type (hello weeds)\n");
                 exit(1);
@@ -138,10 +202,16 @@ void* get_config(const char* name) {
             case CONFIG_TYPE_BOOL:
                 retv = (void*)&config->value.number;
                 break;
-            case CONFIG_TYPE_LIST:
+
             case CONFIG_TYPE_STR:
                 retv = (void*)config->value.string;
                 break;
+
+            case CONFIG_TYPE_LIST:
+                fprintf(stderr, "CFG ERROR: cannot \"get_config()\" on a list. Use iterate_config() instead.\n");
+                exit(1);
+                break;
+
             default:
                 fprintf(stderr, "CFG ERROR: Unknown config type\n");
                 exit(1);
@@ -167,15 +237,16 @@ char* iterate_config(const char* name) {
             // there can be only exactly one value here. Allocate the buffer if it does not exist
             // and then return it.
             if(config->iter_buf == NULL) {
-                config->iter_buf = calloc(12, sizeof(char)); // maximum number of characters in an int.
+                config->iter_buf = CALLOC(12, sizeof(char)); // maximum number of characters in an int.
                 snprintf(config->iter_buf, 12, "%d", config->value.number);
             }
             else {
-                free(config->iter_buf);
+                FREE(config->iter_buf);
                 config->iter_buf = NULL;
             }
             retv = config->iter_buf;
             break;
+
         case CONFIG_TYPE_STR:
             // there can be only exactly one value here. It's already a (char*).
             if(config->iter_buf == NULL)
@@ -184,25 +255,34 @@ char* iterate_config(const char* name) {
                 config->iter_buf = NULL;
             retv = config->iter_buf;
             break;
+
         case CONFIG_TYPE_LIST:
             // This type actually gets iterated. use strtok_r() to iterate it.
             if(config->iter_buf != NULL) {
-                retv = strtok_r(NULL, ":", &config->sav_buf);
-                if(retv == NULL) {
-                    free(config->iter_buf);
-                    config->iter_buf = NULL;
-                }
+                config->iter_buf = get_ptr_list_next(config->value.list);
+                retv = config->iter_buf;
             }
             else {
-                config->iter_buf = strdup(config->value.string);
-                retv = strtok_r(config->iter_buf, ":", &config->sav_buf);
+                reset_ptr_list(config->value.list);
+                config->iter_buf = get_ptr_list_next(config->value.list);
+                retv = config->iter_buf;
             }
             break;
+
         default:
             fprintf(stderr, "CFG ERROR: Cannot iterate configuation parameter\n");
             exit(1);
     }
     return retv;
+}
+
+// call this before starting an iteration
+void reset_config_list(const char* name) {
+
+    configuration_t* config = find_config_by_name(name);
+    if(config->type == CONFIG_TYPE_LIST)
+        reset_ptr_list(config->value.list);
+    // else just do nothing
 }
 
 void show_use(void) {
@@ -218,6 +298,7 @@ void show_use(void) {
                         _global_config[i].value.number,
                         _global_config[i].required? "TRUE": "FALSE");
                 break;
+
             case CONFIG_TYPE_STR:
                 fprintf(stderr, "\n  %2s <str>  %s\n",
                         _global_config[i].arg != NULL? _global_config[i].arg: "",
@@ -226,6 +307,7 @@ void show_use(void) {
                         _global_config[i].value.string,
                         _global_config[i].required? "TRUE": "FALSE");
                 break;
+
             case CONFIG_TYPE_BOOL:
             case CONFIG_TYPE_HELP:
                 fprintf(stderr, "\n  %2s <bool> %s\n",
@@ -236,17 +318,25 @@ void show_use(void) {
                         _global_config[i].required? "TRUE": "FALSE");
 
                 break;
+
             case CONFIG_TYPE_LIST:
                 fprintf(stderr, "\n  %2s <list> %s\n",
                         _global_config[i].arg != NULL? _global_config[i].arg: "",
                         _global_config[i].help);
-                fprintf(stderr, "     required: %s\n",
-                        _global_config[i].required? "TRUE": "FALSE");
-                if(_global_config[i].value.string != NULL)
-                    fprintf(stderr, "     %s\n", _global_config[i].value.string);
+
+                fprintf(stderr, "     required: %s\n", _global_config[i].required? "TRUE": "FALSE");
+
+                if(_global_config[i].value.list->nitems != 0) {
+                    ptr_list_t* list = _global_config[i].value.list;
+                    fprintf(stderr, "     ");
+                    for(char* ptr = get_ptr_list_next(list); ptr != NULL; ptr = get_ptr_list_next(list))
+                        fprintf(stderr, "%s ", ptr);
+                    fprintf(stderr, "\n");
+                }
                 else
                     fprintf(stderr, "     <empty>\n");
                 break;
+
             default:
                 fprintf(stderr, "INTERNAL ERROR: Cannot parse command line\n");
                 exit(1);

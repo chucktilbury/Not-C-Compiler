@@ -20,5 +20,8 @@
 #include "ast.h"
 #include "parser.h"
 #include "configure.h"
+#include "symbol_table.h"
+
+extern memory_system_t* memory_system;
 
 #endif

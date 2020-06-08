@@ -68,7 +68,7 @@ int expect_token(scanner_state_t* ss, int expect) {
     int tok = get_token(ss);
 
     if(expect != tok) {
-        syntax("expected %s but got %s", tok_to_strg(expect), tok);
+        syntax("expected %s but got %s", tok_to_strg(expect), tok_to_strg(tok));
         return ERROR_TOKEN;
     }
 
@@ -80,19 +80,22 @@ int expect_token_list(scanner_state_t* ss, int num, ...) {
     va_list(args);
     int tok = get_token(ss);
     char buffer[1024];
+    int expect;
 
     memset(buffer, 0, sizeof(buffer));
     va_start(args, num);
     for(int i = 0; i < num; i++) {
-        if(tok == va_arg(args, int))
+        expect = va_arg(args, int);
+        if(tok == expect)
             return tok;
         else {
-            STRNCAT(buffer, tok_to_strg(tok), sizeof(buffer));
-            STRNCAT(buffer, ", ", sizeof(buffer));
+            STRNCAT(buffer, tok_to_strg(expect), sizeof(buffer));
+            if(i+1 < num)
+                STRNCAT(buffer, " or ", sizeof(buffer));
         }
     }
 
-    syntax("expected %sbut got %s", buffer, tok);
+    syntax("expected %s but got %s", buffer, tok_to_strg(tok));
 
     return ERROR_TOKEN;
 }
@@ -180,7 +183,7 @@ void debug_trace(int lev, const char *str, ...) {
         else
             ofp = stderr;
 
-        fprintf(ofp, "TRACE: %s: %d: %d: ", get_file_name(), get_line_number(), get_col_number());
+        fprintf(ofp, "TRACE: %s: %d: %d: ", clip_path(get_file_name()), get_line_number(), get_col_number());
         va_start(args, str);
         vfprintf(ofp, str, args);
         va_end(args);
@@ -198,7 +201,7 @@ void debug_mark(int lev, const char *file, int line, const char *func) {
         else
             ofp = stderr;
 
-        fprintf(ofp, "MARK: (%s, %d) %s: %d: %d: %s\n", file, line, get_file_name(), get_line_number(), get_col_number(), func);
+        fprintf(ofp, "MARK: (%s, %d) %s: %d: %d: %s\n", file, line, clip_path(get_file_name()), get_line_number(), get_col_number(), func);
         //fprintf(ofp, "      %s: %d\n", file, line);
     }
 }

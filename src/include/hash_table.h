@@ -4,7 +4,7 @@
 enum
 {
     HASH_NO_ERROR,
-    HASH_REPLACE,
+    HASH_EXIST,
     HASH_NOT_FOUND,
     HASH_NO_DATA,
     HASH_DATA_SIZE,
@@ -28,5 +28,7 @@ hash_table_t* create_hash_table(void);
 void destroy_hash_table(hash_table_t* table);
 int insert_hash_table(hash_table_t* table, const char* key, void* data, size_t size);
 int find_hash_table(hash_table_t* table, const char* key, void* data, size_t size);
+size_t find_hash_table_entry_size(hash_table_t* tab, const char* key);
+const char* iterate_hash_table(hash_table_t* tab, int reset);
 
 #endif

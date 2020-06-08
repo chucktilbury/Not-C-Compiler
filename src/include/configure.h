@@ -1,6 +1,9 @@
 #ifndef __CONFIGURE_H__
 #define __CONFIGURE_H__
+
 #include <stdio.h>
+#include "ptr_lists.h"
+
 typedef enum {
     CONFIG_TYPE_NUM,
     CONFIG_TYPE_STR,
@@ -19,6 +22,7 @@ typedef struct _configuration {
     union {     // union can hold a number or a string
         int number;
         char* string;
+        ptr_list_t* list;
     } value;
     char touched;
     char* iter_buf; // used for strtok_r()
@@ -27,7 +31,8 @@ typedef struct _configuration {
 
 #define BEGIN_CONFIG configuration_t _global_config[] = { \
             {"-h", "HELP_FLAG", "Print the help and exit", CONFIG_TYPE_HELP, 0, .value.number=0, 0},
-#define END_CONFIG {NULL, NULL, NULL, CONFIG_TYPE_END, 0, .value.number=-1, 0}};
+#define END_CONFIG {NULL, "INFILES", "List of input files", CONFIG_TYPE_LIST, 1, .value.list=NULL, 0, NULL, NULL}, \
+            {NULL, NULL, NULL, CONFIG_TYPE_END, 0, .value.number=-1, 0}};
 
 #define CONFIG_NUM(arg, name, help, req, val) {arg, name, help, CONFIG_TYPE_NUM, req, .value.number=val, 0, NULL, NULL},
 #define CONFIG_STR(arg, name, help, req, val) {arg, name, help, CONFIG_TYPE_STR, req, .value.string=val, 0, NULL, NULL},
@@ -43,6 +48,7 @@ extern configuration_t _global_config[];
 
 int configure(int argc, char** argv);
 void* get_config(const char* name);
+void reset_config_list(const char* name);
 char* iterate_config(const char* name);
 void show_use(void);
 char* get_prog_name(void);

@@ -1,8 +1,10 @@
 
-project(ast)
+project(support)
 
 add_library(${PROJECT_NAME} STATIC
     ast.c
+    symbol_table.c
+    dump_ast.c
 )
 
 target_include_directories(${PROJECT_NAME}

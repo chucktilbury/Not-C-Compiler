@@ -13,3 +13,12 @@ char* cat_string(char* dest, char* src, size_t size) {
 
     return strncat(dest, src, size-s);
 }
+
+const char* clip_path(const char* path) {
+
+    char* tmp = strrchr(path, '/');
+    if(tmp != NULL)
+        return ++tmp;
+    else
+        return path;
+}

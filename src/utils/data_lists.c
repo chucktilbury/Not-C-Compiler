@@ -16,7 +16,7 @@ static void resize_list(data_list_t* list)
     if(list->nitems + 2 > list->capacity)
     {
         list->capacity = list->capacity << 1;
-        list->buffer = reallocate_memory(list->buffer, list->capacity * list->item_size);
+        list->buffer = REALLOC(list->buffer, list->capacity * list->item_size);
 
         if(list->buffer == NULL)
             fatal_error("cannot allocate %lu bytes for managed buffer", list->capacity * list->item_size);
@@ -43,8 +43,8 @@ static unsigned char* list_at_index(data_list_t* list, int index)
 void destroy_data_list(data_list_t* list)
 {
     if(list->buffer != NULL && list->nitems != 0)
-        free_memory(list->buffer);
-    free_memory(list);
+        FREE(list->buffer);
+    FREE(list);
 }
 
 void init_data_list(data_list_t* list, size_t size) {
@@ -53,7 +53,7 @@ void init_data_list(data_list_t* list, size_t size) {
     list->capacity = 0x01 << 3;
     list->nitems = 0;
     list->index = 0;
-    list->buffer = (uint8_t*)allocate_data(list->capacity, size);
+    list->buffer = (uint8_t*)CALLOC(list->capacity, size);
     if(list->buffer == NULL)
         fatal_error("cannot allocate %lu bytes for managed list buffer", list->capacity * size);
 }
@@ -68,7 +68,7 @@ data_list_t* create_data_list(size_t size)
 {
     data_list_t* list;
 
-    list = (data_list_t*)allocate_memory(sizeof(data_list_t));
+    list = (data_list_t*)MALLOC(sizeof(data_list_t));
     if(list == NULL)
         fatal_error("cannot allocate %lu bytes for managed list", sizeof(data_list_t));
 

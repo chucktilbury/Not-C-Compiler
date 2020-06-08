@@ -29,7 +29,6 @@ typedef struct _scanner_state {
 #define FIRST_TOKEN 256
 
 typedef enum {
-    END_OF_INPUT = 0,
     ERROR_TOKEN,
     IMPORT = FIRST_TOKEN,
     EXTERN,
@@ -82,6 +81,10 @@ typedef enum {
     FNUM_LITERAL,
     UNUM_LITERAL,
     IDENTIFIER,
+
+    END_OF_INPUT,
+    END_OF_FILE,
+
 } token_t ;
 
 char* get_file_name(void);

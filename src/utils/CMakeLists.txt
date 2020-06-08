@@ -10,6 +10,7 @@ add_library(${PROJECT_NAME} STATIC
     stacks.c
     tok_to_strg.c
     memory.c
+    misc.c
 )
 
 target_include_directories(${PROJECT_NAME}

@@ -22,67 +22,10 @@ IS          (u|U|l|L)*
 %{
 
 #include "common.h"
+#include "internal.h"
 
 // string buffer to get token from
 //static char strbuf[1024*64];
-
-typedef struct _file_name_stack {
-    int line_no;
-    int col_no;
-    char *name;
-    struct _file_name_stack *next;
-} _file_name_stack;
-
-void count(void);
-static char buffer[1024*64];
-static int bidx = 0;
-static _file_name_stack *name_stack;
-int num_errors = 0; // global updated by parser
-
-// these funcs support the string scanner
-static void append_char(char ch) {
-    if((sizeof(buffer)-1) > (size_t)bidx) {
-        buffer[bidx] = ch;
-        bidx++;
-    }
-    else {
-        scanner_error("buffer overrun");
-    }
-}
-
-static void append_str(char *str) {
-    if((sizeof(buffer)-1) > (strlen(buffer) + strlen(str))) {
-        strcat(buffer, str);
-        bidx = strlen(buffer);
-    }
-    else {
-        scanner_error("buffer overrun");
-    }
-}
-
-static void update_loc(void){
-
-    if(name_stack == NULL)
-        return;
-
-    for(char *s = yytext; *s != '\0'; s++) {
-        name_stack->col_no++;
-    }
-
-}
-
-/*  */
-int check_type(void);
-
-#define YY_USER_ACTION update_loc();
-/*
-#define TOKEN(t)    do{yylval.token = (t); return(t); }while(0)
-#define IDENT()     do{yylval.str = strdup(yytext); return(check_type()); }while(0)
-#define DEF_UNUM()  do{yylval.value.unum = strtol(yytext, NULL, 16); return(UNUM_LITERAL); }while(0)
-#define DEF_INUM()  do{yylval.value.inum = strtol(yytext, NULL, 10); return(INUM_LITERAL); }while(0)
-#define DEF_FNUM()  do{yylval.value.fnum = strtod(yytext, NULL); return(FNUM_LITERAL); }while(0)
-#define STRG()      do{yylval.str = strdup(buffer); BEGIN(INITIAL); return(STRING_LITERAL); }while(0)
-*/
 
 #define SET_TOKEN_STATE(t) do{ \
             scanner_state.token = t; \
@@ -117,8 +60,26 @@ int check_type(void);
             return FNUM_LITERAL; \
         } while(0)
 
-static scanner_state_t scanner_state;
+typedef struct _file_name_stack {
+    //int line_no;
+    //int col_no;
+    YY_BUFFER_STATE state;
+    char *name;
+    struct _file_name_stack *next;
+} _file_name_stack;
 
+int check_type(void);
+void close_file(void);
+void append_char(char ch);
+void append_str(char *str);
+void update_loc(void);
+
+scanner_state_t scanner_state;
+
+char buffer[1024*64];
+int bidx = 0;
+_file_name_stack *name_stack;
+int num_errors = 0; // global updated by parser
 
 %}
 %x SQUOTES
@@ -130,13 +91,13 @@ static scanner_state_t scanner_state;
 
 %%
     /* whitespace */
-\n              { name_stack->line_no++; name_stack->col_no=0; }
+\n              { name_stack->state->yy_bs_lineno++; name_stack->state->yy_bs_column=0; }
 [ \v\f\t\r]    {}
 
     /* recognize and ignore a C comments */
 "/*"            { BEGIN(COMMENT); }
 <COMMENT>"*/"   { BEGIN(INITIAL); }
-<COMMENT>\n     { name_stack->line_no++; yylineno++; name_stack->col_no=0; }
+<COMMENT>\n     { name_stack->state->yy_bs_lineno++; yylineno++; name_stack->state->yy_bs_column=0; }
 <COMMENT>.      {}  /* eat everything in between */
 "//".*          {} /* eat up until the newline */
 
@@ -270,18 +231,29 @@ static scanner_state_t scanner_state;
 
 <<EOF>> {
 
+    if(name_stack != NULL) {
         DEBUG("closing file \"%s\"", name_stack->name);
+
         _file_name_stack *name = name_stack->next;
-        free(name_stack->name);
-        free(name_stack);
+        yy_delete_buffer(name_stack->state);
+        FREE(name_stack->name);
+        FREE(name_stack);
         name_stack = name;
 
-        memset(buffer, 0, sizeof(buffer));
-        yypop_buffer_state();
-        if(!YY_CURRENT_BUFFER) {
+        if(name_stack != NULL)
+            yy_switch_to_buffer(name_stack->state);
+        else {
+            DEBUG("calling yyterminate()");
             yyterminate();
         }
+        memset(buffer, 0, sizeof(buffer));
     }
+    else {
+        DEBUG("<<EOF>> with no file open");
+    }
+    DEBUG("file closed");
+    return END_OF_FILE;
+}
 
 
 %%
@@ -289,28 +261,57 @@ static scanner_state_t scanner_state;
 void open_file(const char *fname) {
 
     _file_name_stack *name;
-// TODO: add a check to make sure that any file is opened exactly once.
-// TODO: add logic to allow for files to be searched for using a command parameter.
+    char* infile = (char*)find_import_file(fname);
 
-    DEBUG("opening file: \"%s\"", fname);
-    if(NULL == (name = calloc(1, sizeof(_file_name_stack))))
+    DEBUG("opening file: \"%s\"", infile);
+    if(NULL == (name = CALLOC(1, sizeof(_file_name_stack))))
         scanner_error("cannot allocate memory for file stack");
 
-    if(NULL == (name->name = strdup(fname)))
-        scanner_error("cannot allocate memory for file stack name");
-
-    name->next = name_stack;
-    name->line_no = 1;
-    name->col_no = 1;
-    name_stack = name;
-
-    yyin = fopen(fname, "r");
+    yyin = fopen(infile, "r");
     if(NULL == yyin) {
         scanner_error("cannot open the input file: \"%s\": %s", fname, strerror(errno));
         exit(1);
     }
 
-    yypush_buffer_state(yy_create_buffer(yyin, YY_BUF_SIZE));
+    name->next = name_stack;
+    name->name = infile;
+    name->state = yy_create_buffer(yyin, YY_BUF_SIZE);
+    name_stack = name;
+    yy_switch_to_buffer(name_stack->state);
+}
+
+// these funcs support the string scanner
+void append_char(char ch) {
+
+    if((sizeof(buffer)-1) > (size_t)bidx) {
+        buffer[bidx] = ch;
+        bidx++;
+    }
+    else {
+        scanner_error("buffer overrun");
+    }
+}
+
+void append_str(char *str) {
+
+    if((sizeof(buffer)-1) > (strlen(buffer) + strlen(str))) {
+        strcat(buffer, str);
+        bidx = strlen(buffer);
+    }
+    else {
+        scanner_error("buffer overrun");
+    }
+}
+
+void update_loc(void) {
+
+    if(name_stack == NULL)
+        return;
+
+    for(char *s = yytext; *s != '\0'; s++) {
+        name_stack->state->yy_bs_column++;
+    }
+
 }
 
 // Tracking and global interface
@@ -323,21 +324,17 @@ char *get_file_name(void) {
 
 int get_line_number(void) {
     if(NULL != name_stack)
-        return name_stack->line_no;
+        return name_stack->state->yy_bs_lineno;
     else
         return -1;
 }
 
 int get_col_number(void) {
     if(NULL != name_stack)
-        return name_stack->col_no;
+        return name_stack->state->yy_bs_column;
     else
         return -1;
 }
-
-/*const char *get_tok_str(void) {
-    return strbuf;
-}*/
 
 /*
  * Return the token and copy the string that formed it if the parameter
@@ -345,10 +342,25 @@ int get_col_number(void) {
  */
 int get_token(scanner_state_t* ss) {
 
+    DEBUG("get_token(): file stack pointer: %p", name_stack);
+    if(name_stack == NULL) {
+        if(ss != NULL) {
+            //memcpy((void*)ss, (void*)&scanner_state, sizeof(scanner_state_t));
+            memset(ss, 0, sizeof(scanner_state_t));
+            ss->token = END_OF_INPUT;
+        }
+        DEBUG("end token = %s", tok_to_strg(END_OF_INPUT));
+        return END_OF_INPUT;
+    }
+
     memset(buffer, 0, sizeof(buffer));
     memset(ss, 0, sizeof(scanner_state_t));
     int tok = yylex();
+    if(tok == 0)
+        tok = END_OF_INPUT;
+    debug(10, "get_token() token = %s", tok_to_strg(tok));
 
+    DEBUG("scanner ptr = %p", ss);
     if(ss != NULL) {
         memcpy((void*)ss, (void*)&scanner_state, sizeof(scanner_state_t));
     }
@@ -376,47 +388,3 @@ int check_type(void) {
     return(IDENTIFIER);
 }
 
-
-#if 0
-yywrap()
-{
-    return(1);
-}
-
-
-comment()
-{
-    char c, c1;
-
-loop:
-    while ((c = input()) != '*' && c != 0)
-        putchar(c);
-
-    if ((c1 = input()) != '/' && c != 0)
-    {
-        unput(c1);
-        goto loop;
-    }
-
-    if (c != 0)
-        putchar(c1);
-}
-
-
-int column = 0;
-
-void count()
-{
-    int i;
-
-    for (i = 0; yytext[i] != '\0'; i++)
-        if (yytext[i] == '\n')
-            column = 0;
-        else if (yytext[i] == '\t')
-            column += 8 - (column % 8);
-        else
-            column++;
-
-    ECHO;
-}
-#endif

@@ -51,15 +51,18 @@ static tok_str tok_list[] = {
     {UNUM_LITERAL, "unsigned number literal"},
     {IDENTIFIER, "identifier"},
     {MAIN, "main function"},
+    {END_OF_INPUT, "end of input"},
+    {END_OF_FILE, "end of file"},
     {-1, NULL}
 };
 
-static char str[25];
+static char str[256];
 
 const char* tok_to_strg(int tok) {
 
+    memset(str, 0, sizeof(str));
     if(tok < FIRST_TOKEN) {
-        sprintf(str, "'%c' token", tok);
+        sprintf(str, "'%c'", tok);
         return str;
     }
     else {

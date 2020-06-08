@@ -16,7 +16,7 @@ static void resize_list(ptr_list_t* list)
     if(list->nitems + 2 > list->capacity)
     {
         list->capacity = list->capacity << 1;
-        list->buffer = reallocate_memory(list->buffer, list->capacity * sizeof(void*));
+        list->buffer = REALLOC(list->buffer, list->capacity * sizeof(void*));
 
         if(list->buffer == NULL)
             fatal_error("cannot allocate %lu bytes for managed buffer", list->capacity * sizeof(void*));
@@ -43,8 +43,8 @@ static unsigned char* list_at_index(ptr_list_t* list, int index)
  */
 void destroy_ptr_list(ptr_list_t* list)
 {
-    free_memory(list->buffer);
-    free_memory(list);
+    FREE(list->buffer);
+    FREE(list);
 }
 
 /*
@@ -55,7 +55,7 @@ void init_ptr_list(ptr_list_t* list) {
     list->capacity = 0x01 << 3;
     list->nitems = 0;
     list->index = 0;
-    list->buffer = (void**)allocate_data(list->capacity, sizeof(void*));
+    list->buffer = (void**)CALLOC(list->capacity, sizeof(void*));
     if(list->buffer == NULL)
         fatal_error("cannot allocate %lu bytes for managed list buffer", list->capacity * sizeof(void*));
 }
@@ -70,7 +70,7 @@ ptr_list_t* create_ptr_list(void)
 {
     ptr_list_t* list;
 
-    list = (ptr_list_t*)allocate_memory(sizeof(ptr_list_t));
+    list = (ptr_list_t*)MALLOC(sizeof(ptr_list_t));
     if(list == NULL)
         fatal_error("cannot allocate %lu bytes for managed list", sizeof(ptr_list_t));
 

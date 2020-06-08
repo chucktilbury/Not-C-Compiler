@@ -35,9 +35,9 @@ void debug_trace(int, const char *, ...);
  * TODO: Add more macros for debugging and memory tracking.
  */
 #  ifdef _DEBUGGING
-#define MARK() debug_mark(5, __FILE__, __LINE__, __func__)
-#define TRACE(...) debug_trace(5, __VA_ARGS__)
-#define DEBUG(...) debug(6, __VA_ARGS__)
+#define MARK() debug_mark(6, __FILE__, __LINE__, __func__)
+#define TRACE(...) debug_trace(6, __VA_ARGS__)
+#define DEBUG(...) debug(5, __VA_ARGS__)
 #
 #else
 #define MARK()
